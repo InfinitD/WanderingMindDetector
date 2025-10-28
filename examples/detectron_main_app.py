@@ -12,9 +12,13 @@ import sys
 import time
 import logging
 from typing import Dict
-from detectron_detector import DetectronFaceDetector
-from neumorphism_ui import NeumorphismUI
-from constants import AppConstants
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from cursey.detectors.detectron_detector import DetectronFaceDetector
+from cursey.ui.neumorphism_ui import NeumorphismUI
+from cursey.utils.constants import AppConstants
 
 # Configure logging
 logging.basicConfig(

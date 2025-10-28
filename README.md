@@ -1,6 +1,6 @@
-# Cursey - Multi-Person Face & Eye Tracking System
+# Mind Wandering Detector - Multi-Person Face & Eye Tracking System
 
-A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 integration and modern neumorphism UI, designed for real-time monitoring and analysis.
+A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 integration, designed for real-time monitoring and analysis of attention and mind wandering patterns.
 
 ## Features
 
@@ -14,15 +14,6 @@ A state-of-the-art multi-person face and eye tracking system with Facebook Detec
 - **Temporal smoothing** for stable tracking
 - **GPU acceleration** support for real-time performance
 
-### Modern Neumorphism UI
-- **Clean, modern interface** with neumorphism design principles
-- **Smooth animations** and visual transitions
-- **Enhanced visual hierarchy** with depth and shadows
-- **Interactive buttons** with tactile feedback
-- **Real-time statistics** with modern card layouts
-- **Status indicators** with intuitive color coding
-- **Responsive design** optimized for different screen sizes
-
 ### Abstract Geometric Visualization
 - **Real-time mannequin widgets** with 3D pose representation
 - **Head pose mapping** (pitch, yaw, roll degrees of freedom)
@@ -31,18 +22,10 @@ A state-of-the-art multi-person face and eye tracking system with Facebook Detec
 - **Smooth animation** with interpolation
 - **Color-coded elements** for intuitive understanding
 
-### Mini User Interface
-- **Side panel layout** with camera feed and controls
-- **Session tracking** (duration, frames, detections, FPS)
-- **Real-time values** display for each person
-- **Interactive controls** (start/stop, reset, toggle displays)
-- **Status indicators** (tracking quality, system health)
-- **Performance monitoring** with FPS and quality metrics
-
 ## Project Structure
 
 ```
-Cursey/
+MindWanderingDetector/
 ├── src/
 │   ├── detectron_main_app.py       # Main application with Detectron2
 │   ├── detectron_detector.py       # Facebook Detectron2 integration
@@ -72,8 +55,8 @@ Cursey/
 
 ### Quick Setup
 ```bash
-# Clone or navigate to Cursey directory
-cd Cursey
+# Clone or navigate to Mind Wandering Detector directory
+cd MindWanderingDetector
 
 # Install Detectron2 and dependencies (recommended)
 python install_detectron2.py
@@ -231,4 +214,4 @@ This is a research and development project. For questions or contributions, plea
 
 ---
 
-**Cursey Multi-Person Tracking System** - Advanced face and eye tracking with Facebook Detectron2 and modern neumorphism UI
+**Mind Wandering Detector Multi-Person Tracking System** - Advanced face and eye tracking with Facebook Detectron2 for attention monitoring

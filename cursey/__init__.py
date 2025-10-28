@@ -14,15 +14,27 @@ __author__ = "Cursey Development Team"
 __license__ = "MIT"
 __description__ = "Multi-Person Face & Eye Tracking System with Detectron2"
 
-# Import main components
-from .detectors.detectron_detector import DetectronFaceDetector
+# Import main components (with optional Detectron2)
+try:
+    from .detectors.detectron_detector import DetectronFaceDetector
+    DETECTRON_AVAILABLE = True
+except ImportError:
+    DetectronFaceDetector = None
+    DETECTRON_AVAILABLE = False
+
 from .detectors.enhanced_detector import EnhancedFaceDetector
 from .detectors.high_performance_detector import HighPerformanceDetector
 from .detectors.yolo_face_detector import YOLOFaceDetector
 from .detectors.eye_detector import EyeDetector
 from .detectors.gaze_analyzer import GazeAnalyzer
 
-from .ui.neumorphism_ui import NeumorphismUI
+try:
+    from .ui.neumorphism_ui import NeumorphismUI
+    NEUMORPHISM_AVAILABLE = True
+except ImportError:
+    NeumorphismUI = None
+    NEUMORPHISM_AVAILABLE = False
+
 from .ui.enhanced_ui import EnhancedMinimalUI
 from .ui.minimal_ui import MinimalUI
 

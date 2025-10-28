@@ -12,9 +12,13 @@ import sys
 import time
 import logging
 from typing import Dict
-from high_performance_detector import HighPerformanceDetector
-from enhanced_ui import EnhancedMinimalUI
-from constants import AppConstants
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from cursey.detectors.high_performance_detector import HighPerformanceDetector
+from cursey.ui.enhanced_ui import EnhancedMinimalUI
+from cursey.utils.constants import AppConstants
 
 # Configure logging
 logging.basicConfig(

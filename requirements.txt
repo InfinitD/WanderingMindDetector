@@ -1,0 +1,31 @@
+# Cursey Multi-Person Tracking System Requirements
+# SOTA face and eye detection with Facebook Detectron2 integration
+
+# Core computer vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Facebook Detectron2 for state-of-the-art object detection
+torch>=1.9.0
+torchvision>=0.10.0
+detectron2>=0.6
+
+# Additional dependencies for Detectron2
+fvcore>=0.1.5
+iopath>=0.1.7
+pycocotools>=2.0.2
+matplotlib>=3.5.0
+pillow>=8.3.0
+
+# Optional: Enhanced performance
+opencv-contrib-python>=4.8.0  # Additional OpenCV features
+
+# Development and testing
+pytest>=7.0.0  # Testing framework
+jupyter>=1.0.0  # Jupyter notebook support
+
+# System requirements
+# Python >= 3.8
+# Camera access permissions
+# Adequate lighting for face detection
+# CUDA support recommended for Detectron2

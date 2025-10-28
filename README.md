@@ -2,7 +2,7 @@
 
 A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 integration and modern neumorphism UI, designed for real-time monitoring and analysis.
 
-## 🚀 Features
+## Features
 
 ### SOTA Detection Algorithm
 - **Facebook Detectron2** integration for state-of-the-art object detection
@@ -39,7 +39,7 @@ A state-of-the-art multi-person face and eye tracking system with Facebook Detec
 - **Status indicators** (tracking quality, system health)
 - **Performance monitoring** with FPS and quality metrics
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Cursey/
@@ -62,7 +62,7 @@ Cursey/
 └── COMPREHENSIVE_REDESIGN.md      # Detailed implementation guide
 ```
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -97,7 +97,7 @@ python detectron_main_app.py 1 2 false
 # Camera 1, max 2 people, CPU only
 ```
 
-## 🎮 Controls
+## Controls
 
 ### Mouse Controls
 - Click buttons in the side panel for:
@@ -110,7 +110,7 @@ python detectron_main_app.py 1 2 false
 - `r` - Reset session
 - `d` - Toggle detection on/off
 
-## 📊 Technical Specifications
+## Technical Specifications
 
 ### Performance
 - **Max Persons**: 2-3 (optimal performance)
@@ -136,7 +136,7 @@ python detectron_main_app.py 1 2 false
 - **Pose Information**: Real-time angle displays
 - **Quality Metrics**: Confidence and stability scores
 
-## 🔧 Architecture
+## Architecture
 
 ### Core Components
 
@@ -166,7 +166,7 @@ python detectron_main_app.py 1 2 false
    - HighPerformanceDetector for 60 FPS
    - YOLOFaceDetector for YOLO-style detection
 
-## 📈 Use Cases
+## Use Cases
 
 - **Research**: Multi-person gaze tracking studies with SOTA detection
 - **Education**: Attention monitoring in classrooms
@@ -175,7 +175,7 @@ python detectron_main_app.py 1 2 false
 - **Human-Computer Interaction**: Gaze-based interaction systems
 - **Computer Vision**: Object detection and instance segmentation research
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Installation**:
    ```bash
@@ -200,7 +200,7 @@ python detectron_main_app.py 1 2 false
    - Real-time values display for each person
    - Session statistics track all detections
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 - **Detectron2 installation fails**: Run `python install_detectron2.py` for automated setup
@@ -221,11 +221,11 @@ python detectron_main_app.py 1 2 false
 - **Memory usage**: Detectron2 requires more RAM than OpenCV
 - **GPU memory**: Ensure sufficient VRAM for GPU acceleration
 
-## 📝 License
+## License
 
 This project is part of the Cursey development initiative for advanced multi-person tracking systems with state-of-the-art computer vision.
 
-## 🤝 Contributing
+## Contributing
 
 This is a research and development project. For questions or contributions, please refer to the development team.
 

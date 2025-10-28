@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Cursey! This document provides guidelines and information for contributors.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -28,7 +28,7 @@ Thank you for your interest in contributing to Cursey! This document provides gu
    python test_detectron_implementation.py
    ```
 
-## 📝 How to Contribute
+## How to Contribute
 
 ### Reporting Issues
 - Use the GitHub issue tracker
@@ -63,7 +63,7 @@ Thank you for your interest in contributing to Cursey! This document provides gu
    - Reference related issues
    - Ensure all tests pass
 
-## 🏗️ Code Style
+## Code Style
 
 ### Python Style
 - Follow PEP 8 guidelines
@@ -92,7 +92,7 @@ src/
 - Constants: `UPPER_CASE` (e.g., `MAX_PERSONS`)
 - Files: `snake_case` (e.g., `detectron_detector.py`)
 
-## 🧪 Testing
+## Testing
 
 ### Test Structure
 - Unit tests for individual components
@@ -111,7 +111,7 @@ python -m pytest tests/test_detector.py
 python -m pytest --cov=src tests/
 ```
 
-## 📚 Documentation
+## Documentation
 
 ### Code Documentation
 - Use Google-style docstrings
@@ -141,7 +141,7 @@ def process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
     """
 ```
 
-## 🔧 Development Guidelines
+## Development Guidelines
 
 ### Performance Considerations
 - Optimize for real-time processing (30+ FPS)
@@ -161,7 +161,7 @@ def process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
 - Provide clear visual feedback
 - Maintain consistent color schemes
 
-## 🐛 Debugging
+## Debugging
 
 ### Common Issues
 1. **Detectron2 Installation**: Use the provided installation script
@@ -175,7 +175,7 @@ def process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
 - Add visual debugging overlays
 - Create diagnostic utilities
 
-## 📋 Pull Request Process
+## Pull Request Process
 
 1. **Pre-submission Checklist**
    - [ ] Code follows style guidelines
@@ -205,7 +205,7 @@ def process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
    - [ ] Documentation updated
    ```
 
-## 🤝 Community Guidelines
+## Community Guidelines
 
 ### Code of Conduct
 - Be respectful and inclusive
@@ -219,11 +219,11 @@ def process_frame(self, frame: np.ndarray) -> Dict[str, Any]:
 - Join our community channels
 - Contribute to documentation improvements
 
-## 📄 License
+## License
 
 By contributing to Cursey, you agree that your contributions will be licensed under the MIT License.
 
-## 🙏 Recognition
+## Recognition
 
 Contributors will be recognized in:
 - README.md contributors section

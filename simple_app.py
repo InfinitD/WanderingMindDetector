@@ -567,6 +567,68 @@ class SOTAGazeEstimator:
         }
         
         return self.smoothed_pose, confidence
+    
+    def _calculate_precise_image_points(self, x: int, y: int, w: int, h: int, 
+                                      eyes: List[Tuple[int, int, int, int]], 
+                                      frame_w: int, frame_h: int) -> np.ndarray:
+        """Calculate precise 2D image points with enhanced accuracy."""
+        points = []
+        
+        # Nose tip (center of face)
+        nose_x = x + w / 2.0
+        nose_y = y + h / 2.0
+        points.append([nose_x, nose_y])
+        
+        # Chin (bottom center of face)
+        chin_x = x + w / 2.0
+        chin_y = y + h
+        points.append([chin_x, chin_y])
+        
+        # Enhanced eye position calculation
+        if len(eyes) >= 2:
+            # Sort eyes by x position
+            sorted_eyes = sorted(eyes, key=lambda eye: eye[0])
+            
+            # Left eye corners
+            left_eye = sorted_eyes[0]
+            left_eye_left_x = left_eye[0]
+            left_eye_left_y = left_eye[1] + left_eye[3] / 2.0
+            left_eye_right_x = left_eye[0] + left_eye[2]
+            left_eye_right_y = left_eye[1] + left_eye[3] / 2.0
+            
+            points.append([left_eye_left_x, left_eye_left_y])
+            points.append([left_eye_right_x, left_eye_right_y])
+            
+            # Right eye corners
+            right_eye = sorted_eyes[1]
+            right_eye_left_x = right_eye[0]
+            right_eye_left_y = right_eye[1] + right_eye[3] / 2.0
+            right_eye_right_x = right_eye[0] + right_eye[2]
+            right_eye_right_y = right_eye[1] + right_eye[3] / 2.0
+            
+            points.append([right_eye_left_x, right_eye_left_y])
+            points.append([right_eye_right_x, right_eye_right_y])
+            
+            # Mouth corners
+            mouth_y = y + h * 0.75
+            mouth_left_x = x + w * 0.25
+            mouth_right_x = x + w * 0.75
+            points.append([mouth_left_x, mouth_y])
+            points.append([mouth_right_x, mouth_y])
+            
+            # Cheek points
+            cheek_y = y + h * 0.6
+            left_cheek_x = x + w * 0.15
+            right_cheek_x = x + w * 0.85
+            points.append([left_cheek_x, cheek_y])
+            points.append([right_cheek_x, cheek_y])
+            
+            # Lower chin
+            lower_chin_x = x + w / 2.0
+            lower_chin_y = y + h * 0.9
+            points.append([lower_chin_x, lower_chin_y])
+        
+        return np.array(points, dtype=np.float64)
 
 @dataclass
 class FaceDetection:

@@ -29,7 +29,7 @@ wandering-mind-detector/
 ├── src/
 │   ├── wmdetector_app.py          # Main WMDetector application
 │   ├── detectron_detector.py      # Facebook Detectron2 integration
-│   ├── main_app.py                # Enhanced main application
+│   ├── wmd_app.py                 # Enhanced main application
 │   ├── enhanced_ui.py             # Enhanced UI with AOI system
 │   ├── enhanced_detector.py       # Enhanced detection system
 │   ├── high_performance_detector.py # High-performance detector

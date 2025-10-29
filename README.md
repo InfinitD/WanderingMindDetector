@@ -1,4 +1,4 @@
-# Mind Wandering Detector - Multi-Person Face & Eye Tracking System
+# wandering-mind-detector - Multi-Person Face & Eye Tracking System
 
 A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 integration, designed for real-time monitoring and analysis of attention and mind wandering patterns.
 
@@ -25,7 +25,7 @@ A state-of-the-art multi-person face and eye tracking system with Facebook Detec
 ## Project Structure
 
 ```
-MindWanderingDetector/
+wandering-mind-detector/
 ├── src/
 │   ├── detectron_main_app.py       # Main application with Detectron2
 │   ├── detectron_detector.py       # Facebook Detectron2 integration
@@ -55,8 +55,8 @@ MindWanderingDetector/
 
 ### Quick Setup
 ```bash
-# Clone or navigate to Mind Wandering Detector directory
-cd MindWanderingDetector
+# Clone or navigate to wandering-mind-detector directory
+cd wandering-mind-detector
 
 # Install Detectron2 and dependencies (recommended)
 python install_detectron2.py
@@ -214,4 +214,4 @@ This is a research and development project. For questions or contributions, plea
 
 ---
 
-**Mind Wandering Detector Multi-Person Tracking System** - Advanced face and eye tracking with Facebook Detectron2 for attention monitoring
+**wandering-mind-detector Multi-Person Tracking System** - Advanced face and eye tracking with Facebook Detectron2 for attention monitoring

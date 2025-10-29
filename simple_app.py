@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mind Wandering Detector Application
+wandering-mind-detector Application
 Standalone version that works without Detectron2 dependencies
 """
 
@@ -30,8 +30,8 @@ class FaceDetection:
     eyes: List[Tuple[int, int, int, int]]  # eye bounding boxes
     quality_score: float
 
-class MindWanderingDetector:
-    """Mind Wandering Detector using OpenCV Haar Cascades."""
+class WanderingMindDetector:
+    """wandering-mind-detector using OpenCV Haar Cascades."""
     
     def __init__(self, max_persons: int = 3):
         self.max_persons = max_persons
@@ -45,7 +45,7 @@ class MindWanderingDetector:
         self.detection_history = deque(maxlen=10)
         self.person_counter = 0
         
-        logger.info("MindWanderingDetector initialized")
+        logger.info("WanderingMindDetector initialized")
     
     def detect_faces(self, frame: np.ndarray) -> List[FaceDetection]:
         """Detect faces in the frame."""
@@ -129,7 +129,7 @@ class SimpleUI:
         panel = np.full((h, self.panel_width, 3), self.colors['panel'], dtype=np.uint8)
         
         # Draw header
-        cv2.putText(panel, "Mind Wandering Detector", (10, 30), 
+        cv2.putText(panel, "wandering-mind-detector", (10, 30), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, self.colors['text'], 2)
         
         # Draw FPS
@@ -170,12 +170,12 @@ class SimpleUI:
         combined = np.hstack([frame, panel])
         return combined
 
-class MindWanderingApp:
-    """Main Mind Wandering Detector application."""
+class WanderingMindApp:
+    """Main wandering-mind-detector application."""
     
     def __init__(self, camera_index: int = 0):
         self.camera_index = camera_index
-        self.detector = MindWanderingDetector()
+        self.detector = WanderingMindDetector()
         self.ui = SimpleUI()
         self.cap = None
         self.running = False
@@ -209,7 +209,7 @@ class MindWanderingApp:
         fps_counter = 0
         fps_start_time = time.time()
         
-        logger.info("Starting Mind Wandering Detector application...")
+        logger.info("Starting wandering-mind-detector application...")
         print("Press 'q' to quit, 'r' to reset")
         
         try:
@@ -235,7 +235,7 @@ class MindWanderingApp:
                 display_frame = self.ui.render(frame, detections, fps)
                 
                 # Show frame
-                cv2.imshow('Mind Wandering Detector', display_frame)
+                cv2.imshow('wandering-mind-detector', display_frame)
                 
                 # Handle key presses
                 key = cv2.waitKey(1) & 0xFF
@@ -263,7 +263,7 @@ class MindWanderingApp:
 
 def main():
     """Main entry point."""
-    print("Mind Wandering Detector Application")
+    print("wandering-mind-detector Application")
     print("=" * 50)
     
     # Parse command line arguments
@@ -275,7 +275,7 @@ def main():
             print("Invalid camera index, using default (0)")
     
     # Create and run application
-    app = MindWanderingApp(camera_index)
+    app = WanderingMindApp(camera_index)
     app.run()
 
 if __name__ == "__main__":

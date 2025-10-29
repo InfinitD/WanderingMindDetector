@@ -1,12 +1,12 @@
-# Mind Wandering Detector Docker Documentation
+# wandering-mind-detector Docker Documentation
 
 ## Overview
-This Docker setup allows you to run the Mind Wandering Detector application in a containerized environment with proper camera access and GUI support.
+This Docker setup allows you to run the wandering-mind-detector application in a containerized environment with proper camera access and GUI support.
 
 ## Files Created
 
 ### 1. Dockerfile
-- **Purpose**: Defines the Docker image for the Mind Wandering Detector
+- **Purpose**: Defines the Docker image for the wandering-mind-detector
 - **Base Image**: Ubuntu 20.04
 - **Features**:
   - OpenCV and computer vision libraries
@@ -18,8 +18,8 @@ This Docker setup allows you to run the Mind Wandering Detector application in a
 ### 2. docker-compose.yml
 - **Purpose**: Orchestrates the Docker container with proper configuration
 - **Services**:
-  - `mind-wandering-detector`: GUI mode with X11 forwarding
-  - `mind-wandering-detector-headless`: Headless mode for server deployment
+  - `wandering-mind-detector`: GUI mode with X11 forwarding
+  - `wandering-mind-detector-headless`: Headless mode for server deployment
 - **Features**:
   - Camera device mapping
   - X11 forwarding for GUI
@@ -55,7 +55,7 @@ chmod +x docker_setup.sh
 
 #### Build Image
 ```bash
-docker build -t mind-wandering-detector .
+docker build -t wandering-mind-detector .
 ```
 
 #### Run GUI Mode (Linux/macOS with X11)
@@ -68,7 +68,7 @@ docker run -it --rm \
     --device=/dev/video0:/dev/video0 \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    mind-wandering-detector
+    wandering-mind-detector
 ```
 
 #### Run Headless Mode
@@ -76,16 +76,16 @@ docker run -it --rm \
 docker run -it --rm \
     --device=/dev/video0:/dev/video0 \
     -p 8080:8080 \
-    mind-wandering-detector
+    wandering-mind-detector
 ```
 
 #### Using Docker Compose
 ```bash
 # GUI mode
-docker-compose up mind-wandering-detector
+docker-compose up wandering-mind-detector
 
 # Headless mode
-docker-compose up mind-wandering-detector-headless
+docker-compose up wandering-mind-detector-headless
 ```
 
 ## Requirements

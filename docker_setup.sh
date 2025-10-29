@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Mind Wandering Detector Docker Setup Script
-# This script helps you build and run the Mind Wandering Detector in Docker
+# wandering-mind-detector Docker Setup Script
+# This script helps you build and run the wandering-mind-detector in Docker
 
 set -e
 
-echo "Mind Wandering Detector - Docker Setup"
+echo "wandering-mind-detector - Docker Setup"
 echo "======================================"
 
 # Check if Docker is installed
@@ -26,7 +26,7 @@ echo "✅ Docker and Docker Compose are installed"
 
 # Build the Docker image
 echo "🔨 Building Docker image..."
-docker build -t mind-wandering-detector .
+docker build -t wandering-mind-detector .
 
 if [ $? -eq 0 ]; then
     echo "✅ Docker image built successfully"
@@ -59,18 +59,18 @@ case $choice in
             --device=/dev/video0:/dev/video0 \
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-            mind-wandering-detector
+            wandering-mind-detector
         ;;
     2)
         echo "🚀 Starting headless mode..."
         docker run -it --rm \
             --device=/dev/video0:/dev/video0 \
             -p 8080:8080 \
-            mind-wandering-detector
+            wandering-mind-detector
         ;;
     3)
         echo "🚀 Starting with Docker Compose..."
-        docker-compose up mind-wandering-detector
+        docker-compose up wandering-mind-detector
         ;;
     *)
         echo "❌ Invalid choice. Exiting."
@@ -78,4 +78,4 @@ case $choice in
         ;;
 esac
 
-echo "✅ Mind Wandering Detector Docker setup complete!"
+echo "✅ wandering-mind-detector Docker setup complete!"

@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  mind-wandering-detector:
+  wandering-mind-detector:
     build: .
-    container_name: mind-wandering-detector
+    container_name: wandering-mind-detector
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
@@ -18,9 +18,9 @@ services:
     command: python3 simple_app.py
 
   # Alternative service for headless operation
-  mind-wandering-detector-headless:
+  wandering-mind-detector-headless:
     build: .
-    container_name: mind-wandering-detector-headless
+    container_name: wandering-mind-detector-headless
     volumes:
       - /dev/video0:/dev/video0
     devices:

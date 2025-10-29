@@ -1,9 +1,6 @@
 """
-Enhanced Main Application with Detectron2 and Neumorphism UI
-Modern face detection with Facebook Detectron2 and clean neumorphism interface
-
-Author: Cursey Team
-Date: 2025
+WMDetector Application
+Main application with Detectron2 integration and modern interface
 """
 
 import cv2
@@ -28,8 +25,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class CurseyDetectronApp:
-    """Enhanced main application with Detectron2 and neumorphism UI."""
+class WMDetectorApp:
+    """Main WMDetector application with Detectron2 integration."""
     
     def __init__(self, camera_index: int = 0, max_persons: int = 3, use_gpu: bool = True):
         # Input validation
@@ -187,7 +184,7 @@ class CurseyDetectronApp:
     
     def run(self):
         """Main application loop."""
-        logger.info("Cursey Detectron2 Face Detection System")
+        logger.info("WMDetector Face Detection System")
         logger.info("=" * 50)
         
         # Initialize camera
@@ -196,8 +193,8 @@ class CurseyDetectronApp:
             return
         
         # Set up window with mouse callback
-        cv2.namedWindow('Cursey Detectron2 Face Detection', cv2.WINDOW_AUTOSIZE)
-        cv2.setMouseCallback('Cursey Detectron2 Face Detection', self.mouse_callback)
+        cv2.namedWindow('WMDetector Face Detection', cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback('WMDetector Face Detection', self.mouse_callback)
         
         logger.info("\nControls:")
         logger.info("- Press 'q' to quit")
@@ -224,7 +221,7 @@ class CurseyDetectronApp:
                 output_frame = self.process_frame(frame)
                 
                 # Display frame
-                cv2.imshow('Cursey Detectron2 Face Detection', output_frame)
+                cv2.imshow('WMDetector Face Detection', output_frame)
                 
                 # Calculate and display FPS
                 fps = self.calculate_fps()
@@ -291,7 +288,7 @@ def main():
     
     # Create and run application
     try:
-        app = CurseyDetectronApp(camera_index=camera_index, max_persons=max_persons, use_gpu=use_gpu)
+        app = WMDetectorApp(camera_index=camera_index, max_persons=max_persons, use_gpu=use_gpu)
         app.run()
     except ValueError as e:
         logger.error(f"Invalid parameters: {e}")

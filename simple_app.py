@@ -140,22 +140,42 @@ class SimpleUI:
         cv2.putText(panel, f"Faces: {len(detections)}", (10, 80), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.colors['text'], 1)
         
-        # Draw face information
+        # Draw person cards with pitch, roll, yaw values
         y_offset = 110
+        card_height = 120
+        card_width = self.panel_width - 20
+        
         for i, detection in enumerate(detections):
+            # Draw card background
+            card_y = y_offset + (i * (card_height + 10))
+            cv2.rectangle(panel, (10, card_y), (card_width + 10, card_y + card_height), 
+                         self.colors['text_bg'], -1)
+            cv2.rectangle(panel, (10, card_y), (card_width + 10, card_y + card_height), 
+                         self.colors['text'], 2)
+            
             # Person ID
-            cv2.putText(panel, f"Person {detection.person_id}:", (10, y_offset), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            cv2.putText(panel, f"Person {detection.person_id}", (20, card_y + 25), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.colors['text'], 1)
             
             # Confidence
-            cv2.putText(panel, f"Confidence: {detection.confidence:.2f}", (10, y_offset + 20), 
+            cv2.putText(panel, f"Confidence: {detection.confidence:.2f}", (20, card_y + 45), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
             
             # Eyes count
-            cv2.putText(panel, f"Eyes: {len(detection.eyes)}", (10, y_offset + 40), 
+            cv2.putText(panel, f"Eyes: {len(detection.eyes)}", (20, card_y + 65), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
             
-            y_offset += 70
+            # Pitch, Roll, Yaw values in card
+            pitch = detection.pose['pitch']
+            roll = detection.pose['roll']
+            yaw = detection.pose['yaw']
+            
+            cv2.putText(panel, f"Pitch: {pitch:.1f}°", (20, card_y + 85), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            cv2.putText(panel, f"Roll: {roll:.1f}°", (20, card_y + 105), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            cv2.putText(panel, f"Yaw: {yaw:.1f}°", (20, card_y + 125), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
         
         # Draw face bounding boxes on main frame
         for detection in detections:

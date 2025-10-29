@@ -27,9 +27,8 @@ A state-of-the-art multi-person face and eye tracking system with Facebook Detec
 ```
 wandering-mind-detector/
 ├── src/
-│   ├── detectron_main_app.py       # Main application with Detectron2
-│   ├── detectron_detector.py       # Facebook Detectron2 integration
-│   ├── neumorphism_ui.py          # Modern neumorphism UI
+│   ├── wmdetector_app.py          # Main WMDetector application
+│   ├── detectron_detector.py      # Facebook Detectron2 integration
 │   ├── main_app.py                # Enhanced main application
 │   ├── enhanced_ui.py             # Enhanced UI with AOI system
 │   ├── enhanced_detector.py       # Enhanced detection system
@@ -137,7 +136,7 @@ python detectron_main_app.py 1 2 false
    - Enhanced visual hierarchy
    - Interactive controls
 
-3. **CurseyDetectronApp** (`detectron_main_app.py`)
+3. **WMDetectorApp** (`wmdetector_app.py`)
    - Main application integration
    - Camera management and optimization
    - Event handling and user interaction
@@ -206,7 +205,7 @@ python detectron_main_app.py 1 2 false
 
 ## License
 
-This project is part of the Cursey development initiative for advanced multi-person tracking systems with state-of-the-art computer vision.
+This project is part of the wandering-mind-detector development initiative for advanced multi-person tracking systems with state-of-the-art computer vision.
 
 ## Contributing
 

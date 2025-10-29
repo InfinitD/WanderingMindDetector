@@ -1,9 +1,6 @@
 """
-Enhanced Main Application - Cursey Face Detection
+Enhanced Main Application - wandering-mind-detector Face Detection
 Improved stability, accuracy, and AOI functionality
-
-Author: Cursey Team
-Date: 2025
 """
 
 import cv2
@@ -28,8 +25,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class CurseyEnhancedApp:
-    """Enhanced main application for face detection with improved stability and AOI."""
+class WanderingMindApp:
+    """Enhanced wandering-mind-detector application."""
     
     def __init__(self, camera_index: int = 0, max_persons: int = 3):
         # Input validation
@@ -175,7 +172,7 @@ class CurseyEnhancedApp:
     
     def run(self):
         """Main application loop."""
-        logger.info("Cursey Minimal Face Detection System")
+        logger.info("wandering-mind-detector Face Detection System")
         logger.info("=" * 40)
         
         # Initialize camera
@@ -184,8 +181,8 @@ class CurseyEnhancedApp:
             return
         
         # Set up window with mouse callback
-        cv2.namedWindow('Cursey Enhanced Face Detection', cv2.WINDOW_AUTOSIZE)
-        cv2.setMouseCallback('Cursey Enhanced Face Detection', self.mouse_callback)
+        cv2.namedWindow('wandering-mind-detector Face Detection', cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback('wandering-mind-detector Face Detection', self.mouse_callback)
         
         logger.info("\nControls:")
         logger.info("- Press 'q' to quit")
@@ -210,7 +207,7 @@ class CurseyEnhancedApp:
                 output_frame = self.process_frame(frame)
                 
                 # Display frame
-                cv2.imshow('Cursey Enhanced Face Detection', output_frame)
+                cv2.imshow('wandering-mind-detector Face Detection', output_frame)
                 
                 # Calculate and display FPS
                 fps = self.calculate_fps()
@@ -267,7 +264,7 @@ def main():
     
     # Create and run application
     try:
-        app = CurseyEnhancedApp(camera_index=camera_index, max_persons=max_persons)
+        app = WanderingMindApp(camera_index=camera_index, max_persons=max_persons)
         app.run()
     except ValueError as e:
         logger.error(f"Invalid parameters: {e}")

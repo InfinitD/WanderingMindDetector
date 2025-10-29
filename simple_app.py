@@ -156,65 +156,145 @@ class HeadPoseEstimator:
         
         return x, y, z
 
-class EyeGazeEstimator:
-    """Eye gaze estimation from eye positions."""
+class SOTAGazeEstimator:
+    """State-of-the-art gaze estimation based on head pose with advanced smoothing."""
     
     def __init__(self):
-        self.gaze_history = deque(maxlen=5)
+        self.pose_history = deque(maxlen=10)
+        self.gaze_history = deque(maxlen=8)
+        self.velocity_history = deque(maxlen=5)
+        self.smoothing_factor = 0.7  # Higher = more smoothing
+        self.last_gaze_vector = np.array([0.0, 0.0, 0.0])
         
-    def estimate_gaze(self, eyes: List[Tuple[int, int, int, int]], 
-                     face_bbox: Tuple[int, int, int, int]) -> Dict[str, float]:
-        """Estimate gaze direction from eye positions."""
-        if len(eyes) < 2:
-            return {'gaze_x': 0.0, 'gaze_y': 0.0, 'gaze_confidence': 0.0}
+    def estimate_gaze_from_pose(self, pose: Dict[str, float], 
+                              face_bbox: Tuple[int, int, int, int]) -> Dict[str, float]:
+        """Estimate gaze direction from head pose using advanced algorithms."""
+        pitch = pose['pitch']
+        yaw = pose['yaw']
+        roll = pose['roll']
         
-        # Sort eyes by x position
-        sorted_eyes = sorted(eyes, key=lambda eye: eye[0])
-        left_eye = sorted_eyes[0]
-        right_eye = sorted_eyes[1]
+        # Convert degrees to radians
+        pitch_rad = math.radians(pitch)
+        yaw_rad = math.radians(yaw)
+        roll_rad = math.radians(roll)
         
-        # Calculate eye centers
-        left_center_x = left_eye[0] + left_eye[2] // 2
-        left_center_y = left_eye[1] + left_eye[3] // 2
-        right_center_x = right_eye[0] + right_eye[2] // 2
-        right_center_y = right_eye[1] + right_eye[3] // 2
+        # Create rotation matrices for each axis
+        Rx = np.array([
+            [1, 0, 0],
+            [0, math.cos(pitch_rad), -math.sin(pitch_rad)],
+            [0, math.sin(pitch_rad), math.cos(pitch_rad)]
+        ])
         
-        # Calculate inter-eye distance
-        inter_eye_distance = math.sqrt((right_center_x - left_center_x)**2 + 
-                                      (right_center_y - left_center_y)**2)
+        Ry = np.array([
+            [math.cos(yaw_rad), 0, math.sin(yaw_rad)],
+            [0, 1, 0],
+            [-math.sin(yaw_rad), 0, math.cos(yaw_rad)]
+        ])
         
-        # Calculate gaze direction relative to face center
-        face_center_x = face_bbox[0] + face_bbox[2] // 2
-        face_center_y = face_bbox[1] + face_bbox[3] // 2
+        Rz = np.array([
+            [math.cos(roll_rad), -math.sin(roll_rad), 0],
+            [math.sin(roll_rad), math.cos(roll_rad), 0],
+            [0, 0, 1]
+        ])
         
-        # Average eye center
-        avg_eye_x = (left_center_x + right_center_x) // 2
-        avg_eye_y = (left_center_y + right_center_y) // 2
+        # Combine rotations (order: roll, pitch, yaw)
+        R = Rz @ Rx @ Ry
         
-        # Calculate gaze offset
-        gaze_x = (avg_eye_x - face_center_x) / (face_bbox[2] / 2)
-        gaze_y = (avg_eye_y - face_center_y) / (face_bbox[3] / 2)
+        # Initial gaze vector (looking forward)
+        initial_gaze = np.array([0.0, 0.0, -1.0])
         
-        # Clamp gaze values
-        gaze_x = max(-1.0, min(1.0, gaze_x))
-        gaze_y = max(-1.0, min(1.0, gaze_y))
+        # Apply rotation to get gaze direction
+        gaze_vector_3d = R @ initial_gaze
         
-        # Calculate confidence based on eye detection quality
-        confidence = min(1.0, inter_eye_distance / 50.0)  # Normalize by expected eye distance
+        # Project to 2D screen coordinates
+        gaze_x = gaze_vector_3d[0] * 0.8  # Scale for screen projection
+        gaze_y = gaze_vector_3d[1] * 0.6  # Scale for screen projection
         
-        # Apply temporal smoothing
-        gaze_data = {'gaze_x': gaze_x, 'gaze_y': gaze_y, 'gaze_confidence': confidence}
-        self.gaze_history.append(gaze_data)
+        # Apply advanced smoothing using Kalman-like filtering
+        smoothed_gaze = self._apply_advanced_smoothing(gaze_x, gaze_y)
         
-        # Return smoothed values
-        if len(self.gaze_history) > 1:
-            avg_gaze_x = sum(d['gaze_x'] for d in self.gaze_history) / len(self.gaze_history)
-            avg_gaze_y = sum(d['gaze_y'] for d in self.gaze_history) / len(self.gaze_history)
-            avg_confidence = sum(d['gaze_confidence'] for d in self.gaze_history) / len(self.gaze_history)
+        # Calculate confidence based on pose stability
+        confidence = self._calculate_pose_confidence(pose)
+        
+        return {
+            'gaze_x': smoothed_gaze[0],
+            'gaze_y': smoothed_gaze[1],
+            'gaze_confidence': confidence,
+            'raw_pitch': pitch,
+            'raw_yaw': yaw,
+            'raw_roll': roll
+        }
+    
+    def _apply_advanced_smoothing(self, gaze_x: float, gaze_y: float) -> np.ndarray:
+        """Apply advanced smoothing using multiple techniques."""
+        current_gaze = np.array([gaze_x, gaze_y])
+        
+        # Store current gaze
+        self.gaze_history.append(current_gaze)
+        
+        if len(self.gaze_history) < 3:
+            return current_gaze
+        
+        # Calculate velocity
+        if len(self.gaze_history) >= 2:
+            velocity = current_gaze - self.gaze_history[-2]
+            self.velocity_history.append(velocity)
+        
+        # Apply exponential moving average with velocity compensation
+        if len(self.gaze_history) >= 3:
+            # Calculate weighted average with more weight on recent values
+            weights = np.exp(np.linspace(-2, 0, len(self.gaze_history)))
+            weights = weights / np.sum(weights)
             
-            return {'gaze_x': avg_gaze_x, 'gaze_y': avg_gaze_y, 'gaze_confidence': avg_confidence}
+            smoothed_gaze = np.zeros(2)
+            for i, gaze in enumerate(self.gaze_history):
+                smoothed_gaze += weights[i] * gaze
+            
+            # Apply velocity damping to reduce jitter
+            if len(self.velocity_history) >= 2:
+                avg_velocity = np.mean(list(self.velocity_history), axis=0)
+                velocity_damping = 0.3
+                smoothed_gaze -= velocity_damping * avg_velocity
+            
+            # Apply adaptive smoothing based on movement speed
+            movement_speed = np.linalg.norm(avg_velocity) if len(self.velocity_history) >= 2 else 0
+            if movement_speed > 0.1:  # High movement
+                smoothing_factor = 0.5
+            elif movement_speed > 0.05:  # Medium movement
+                smoothing_factor = 0.7
+            else:  # Low movement
+                smoothing_factor = 0.9
+            
+            # Final smoothing with adaptive factor
+            self.last_gaze_vector = (smoothing_factor * self.last_gaze_vector + 
+                                   (1 - smoothing_factor) * smoothed_gaze)
+            
+            return self.last_gaze_vector
         
-        return gaze_data
+        return current_gaze
+    
+    def _calculate_pose_confidence(self, pose: Dict[str, float]) -> float:
+        """Calculate confidence based on pose stability and validity."""
+        pitch, yaw, roll = pose['pitch'], pose['yaw'], pose['roll']
+        
+        # Check for extreme angles (less confident)
+        extreme_penalty = 0
+        if abs(pitch) > 60 or abs(yaw) > 60 or abs(roll) > 45:
+            extreme_penalty = 0.3
+        
+        # Check for pose stability
+        stability_score = 1.0
+        if len(self.pose_history) >= 2:
+            last_pose = self.pose_history[-1]
+            pose_diff = abs(pitch - last_pose['pitch']) + abs(yaw - last_pose['yaw']) + abs(roll - last_pose['roll'])
+            stability_score = max(0.3, 1.0 - pose_diff / 180.0)  # Normalize by max possible difference
+        
+        # Store current pose
+        self.pose_history.append(pose)
+        
+        # Combine factors
+        confidence = (1.0 - extreme_penalty) * stability_score
+        return max(0.1, min(1.0, confidence))
 
 @dataclass
 class FaceDetection:
@@ -240,7 +320,7 @@ class WanderingMindDetector:
         
         # Initialize pose and gaze estimators
         self.pose_estimator = HeadPoseEstimator()
-        self.gaze_estimator = EyeGazeEstimator()
+        self.gaze_estimator = SOTAGazeEstimator()
         
         # Detection history for temporal smoothing
         self.detection_history = deque(maxlen=10)
@@ -289,9 +369,9 @@ class WanderingMindDetector:
                 frame_shape=frame.shape[:2]
             )
             
-            # Estimate gaze direction
-            gaze = self.gaze_estimator.estimate_gaze(
-                eyes=eye_boxes,
+            # Estimate gaze direction from head pose
+            gaze = self.gaze_estimator.estimate_gaze_from_pose(
+                pose=pose,
                 face_bbox=(x, y, w, h)
             )
             
@@ -327,6 +407,7 @@ class NeumorphismUI:
             'text_secondary': (200, 200, 200), # Light gray secondary text
             'face_box': (0, 255, 100),       # Bright green for faces
             'eye_box': (100, 200, 255),      # Blue for eyes
+            'gaze_arrow': (255, 100, 100),   # Soft red for gaze arrow
             'card_bg': (65, 65, 65),         # Card background
             'card_shadow_dark': (35, 35, 35), # Dark shadow
             'card_shadow_light': (75, 75, 75), # Light shadow
@@ -455,47 +536,43 @@ class NeumorphismUI:
         for detection in detections:
             x, y, w, h = detection.bbox
             
-            # Draw face box with gradient effect
-            cv2.rectangle(frame, (x, y), (x + w, y + h), self.colors['face_box'], 3)
+            # Draw face box with reduced thickness
+            cv2.rectangle(frame, (x, y), (x + w, y + h), self.colors['face_box'], 1)
             
-            # Draw corner markers
+            # Draw corner markers with reduced thickness
             corner_size = 15
-            cv2.line(frame, (x, y), (x + corner_size, y), self.colors['face_box'], 3)
-            cv2.line(frame, (x, y), (x, y + corner_size), self.colors['face_box'], 3)
-            cv2.line(frame, (x + w, y), (x + w - corner_size, y), self.colors['face_box'], 3)
-            cv2.line(frame, (x + w, y), (x + w, y + corner_size), self.colors['face_box'], 3)
-            cv2.line(frame, (x, y + h), (x + corner_size, y + h), self.colors['face_box'], 3)
-            cv2.line(frame, (x, y + h), (x, y + h - corner_size), self.colors['face_box'], 3)
-            cv2.line(frame, (x + w, y + h), (x + w - corner_size, y + h), self.colors['face_box'], 3)
-            cv2.line(frame, (x + w, y + h), (x + w, y + h - corner_size), self.colors['face_box'], 3)
+            cv2.line(frame, (x, y), (x + corner_size, y), self.colors['face_box'], 1)
+            cv2.line(frame, (x, y), (x, y + corner_size), self.colors['face_box'], 1)
+            cv2.line(frame, (x + w, y), (x + w - corner_size, y), self.colors['face_box'], 1)
+            cv2.line(frame, (x + w, y), (x + w, y + corner_size), self.colors['face_box'], 1)
+            cv2.line(frame, (x, y + h), (x + corner_size, y + h), self.colors['face_box'], 1)
+            cv2.line(frame, (x, y + h), (x, y + h - corner_size), self.colors['face_box'], 1)
+            cv2.line(frame, (x + w, y + h), (x + w - corner_size, y + h), self.colors['face_box'], 1)
+            cv2.line(frame, (x + w, y + h), (x + w, y + h - corner_size), self.colors['face_box'], 1)
             
             # Draw eyes with enhanced styling
             for ex, ey, ew, eh in detection.eyes:
                 cv2.circle(frame, (ex + ew//2, ey + eh//2), max(ew, eh)//2, 
                           self.colors['eye_box'], 2)
             
-            # Draw gaze direction arrow
+            # Draw gaze direction arrow (SOTA head pose-based)
             gaze_x = detection.gaze['gaze_x']
             gaze_y = detection.gaze['gaze_y']
             gaze_conf = detection.gaze['gaze_confidence']
             
-            if gaze_conf > 0.3:  # Only draw if confidence is reasonable
+            if gaze_conf > 0.2:  # Lower threshold for better responsiveness
                 # Calculate arrow start and end points
                 face_center_x = x + w // 2
                 face_center_y = y + h // 2
                 
-                # Scale gaze vector
-                arrow_length = min(w, h) // 3
+                # Scale gaze vector (200% longer)
+                arrow_length = min(w, h) * 0.8  # Increased from 0.3 to 0.8 (200% longer)
                 end_x = int(face_center_x + gaze_x * arrow_length)
                 end_y = int(face_center_y + gaze_y * arrow_length)
                 
-                # Draw gaze arrow
+                # Draw gaze arrow with soft red color
                 cv2.arrowedLine(frame, (face_center_x, face_center_y), 
-                              (end_x, end_y), self.colors['eye_box'], 3, tipLength=0.3)
-                
-                # Draw gaze confidence circle
-                cv2.circle(frame, (face_center_x, face_center_y), 
-                          int(gaze_conf * 20), self.colors['eye_box'], 1)
+                              (end_x, end_y), self.colors['gaze_arrow'], 3, tipLength=0.4)
         
         # Combine frame and panel
         combined = np.hstack([frame, panel])

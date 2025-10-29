@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import time
 import logging
+import math
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from collections import deque
@@ -20,6 +21,201 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+class HeadPoseEstimator:
+    """Head pose estimation using facial landmarks."""
+    
+    def __init__(self):
+        # 3D model points for a generic face (in mm)
+        self.model_points = np.array([
+            (0.0, 0.0, 0.0),             # Nose tip
+            (0.0, -330.0, -65.0),        # Chin
+            (-165.0, -170.0, -135.0),    # Left eye left corner
+            (165.0, -170.0, -135.0),     # Right eye right corner
+            (-150.0, -150.0, -125.0),    # Left mouth corner
+            (150.0, -150.0, -125.0)      # Right mouth corner
+        ], dtype=np.float64)
+        
+        # Camera matrix (approximate)
+        self.camera_matrix = None
+        self.dist_coeffs = np.zeros((4, 1))
+        
+    def estimate_pose(self, face_bbox: Tuple[int, int, int, int], 
+                     eyes: List[Tuple[int, int, int, int]], 
+                     frame_shape: Tuple[int, int]) -> Dict[str, float]:
+        """Estimate head pose from face bounding box and eye positions."""
+        x, y, w, h = face_bbox
+        frame_h, frame_w = frame_shape
+        
+        # Initialize camera matrix if not set
+        if self.camera_matrix is None:
+            focal_length = frame_w
+            center_x = frame_w / 2.0
+            center_y = frame_h / 2.0
+            self.camera_matrix = np.array([
+                [focal_length, 0, center_x],
+                [0, focal_length, center_y],
+                [0, 0, 1]
+            ], dtype=np.float64)
+        
+        # Calculate 2D image points from face and eye positions
+        image_points = self._calculate_image_points(x, y, w, h, eyes, frame_w, frame_h)
+        
+        if len(image_points) < 4:
+            return {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
+        
+        try:
+            # Solve PnP to get rotation and translation vectors
+            success, rotation_vector, translation_vector = cv2.solvePnP(
+                self.model_points[:len(image_points)],
+                image_points,
+                self.camera_matrix,
+                self.dist_coeffs
+            )
+            
+            if not success:
+                return {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
+            
+            # Convert rotation vector to rotation matrix
+            rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
+            
+            # Extract Euler angles (pitch, yaw, roll)
+            pitch, yaw, roll = self._rotation_matrix_to_euler_angles(rotation_matrix)
+            
+            # Convert to degrees
+            pitch = math.degrees(pitch)
+            yaw = math.degrees(yaw)
+            roll = math.degrees(roll)
+            
+            # Clamp values to reasonable ranges
+            pitch = max(-90, min(90, pitch))
+            yaw = max(-90, min(90, yaw))
+            roll = max(-90, min(90, roll))
+            
+            return {'pitch': pitch, 'yaw': yaw, 'roll': roll}
+            
+        except Exception as e:
+            logger.warning(f"Head pose estimation failed: {e}")
+            return {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
+    
+    def _calculate_image_points(self, x: int, y: int, w: int, h: int, 
+                               eyes: List[Tuple[int, int, int, int]], 
+                               frame_w: int, frame_h: int) -> np.ndarray:
+        """Calculate 2D image points from face and eye positions."""
+        points = []
+        
+        # Nose tip (center of face)
+        nose_x = x + w // 2
+        nose_y = y + h // 2
+        points.append([nose_x, nose_y])
+        
+        # Chin (bottom center of face)
+        chin_x = x + w // 2
+        chin_y = y + h
+        points.append([chin_x, chin_y])
+        
+        # Eye positions
+        if len(eyes) >= 2:
+            # Sort eyes by x position
+            sorted_eyes = sorted(eyes, key=lambda eye: eye[0])
+            
+            # Left eye center
+            left_eye = sorted_eyes[0]
+            left_eye_x = left_eye[0] + left_eye[2] // 2
+            left_eye_y = left_eye[1] + left_eye[3] // 2
+            points.append([left_eye_x, left_eye_y])
+            
+            # Right eye center
+            right_eye = sorted_eyes[1]
+            right_eye_x = right_eye[0] + right_eye[2] // 2
+            right_eye_y = right_eye[1] + right_eye[3] // 2
+            points.append([right_eye_x, right_eye_y])
+            
+            # Mouth corners (estimated)
+            mouth_y = y + int(h * 0.7)
+            mouth_left_x = x + int(w * 0.3)
+            mouth_right_x = x + int(w * 0.7)
+            points.append([mouth_left_x, mouth_y])
+            points.append([mouth_right_x, mouth_y])
+        
+        return np.array(points, dtype=np.float64)
+    
+    def _rotation_matrix_to_euler_angles(self, R: np.ndarray) -> Tuple[float, float, float]:
+        """Convert rotation matrix to Euler angles (pitch, yaw, roll)."""
+        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+        
+        singular = sy < 1e-6
+        
+        if not singular:
+            x = math.atan2(R[2, 1], R[2, 2])
+            y = math.atan2(-R[2, 0], sy)
+            z = math.atan2(R[1, 0], R[0, 0])
+        else:
+            x = math.atan2(-R[1, 2], R[1, 1])
+            y = math.atan2(-R[2, 0], sy)
+            z = 0
+        
+        return x, y, z
+
+class EyeGazeEstimator:
+    """Eye gaze estimation from eye positions."""
+    
+    def __init__(self):
+        self.gaze_history = deque(maxlen=5)
+        
+    def estimate_gaze(self, eyes: List[Tuple[int, int, int, int]], 
+                     face_bbox: Tuple[int, int, int, int]) -> Dict[str, float]:
+        """Estimate gaze direction from eye positions."""
+        if len(eyes) < 2:
+            return {'gaze_x': 0.0, 'gaze_y': 0.0, 'gaze_confidence': 0.0}
+        
+        # Sort eyes by x position
+        sorted_eyes = sorted(eyes, key=lambda eye: eye[0])
+        left_eye = sorted_eyes[0]
+        right_eye = sorted_eyes[1]
+        
+        # Calculate eye centers
+        left_center_x = left_eye[0] + left_eye[2] // 2
+        left_center_y = left_eye[1] + left_eye[3] // 2
+        right_center_x = right_eye[0] + right_eye[2] // 2
+        right_center_y = right_eye[1] + right_eye[3] // 2
+        
+        # Calculate inter-eye distance
+        inter_eye_distance = math.sqrt((right_center_x - left_center_x)**2 + 
+                                      (right_center_y - left_center_y)**2)
+        
+        # Calculate gaze direction relative to face center
+        face_center_x = face_bbox[0] + face_bbox[2] // 2
+        face_center_y = face_bbox[1] + face_bbox[3] // 2
+        
+        # Average eye center
+        avg_eye_x = (left_center_x + right_center_x) // 2
+        avg_eye_y = (left_center_y + right_center_y) // 2
+        
+        # Calculate gaze offset
+        gaze_x = (avg_eye_x - face_center_x) / (face_bbox[2] / 2)
+        gaze_y = (avg_eye_y - face_center_y) / (face_bbox[3] / 2)
+        
+        # Clamp gaze values
+        gaze_x = max(-1.0, min(1.0, gaze_x))
+        gaze_y = max(-1.0, min(1.0, gaze_y))
+        
+        # Calculate confidence based on eye detection quality
+        confidence = min(1.0, inter_eye_distance / 50.0)  # Normalize by expected eye distance
+        
+        # Apply temporal smoothing
+        gaze_data = {'gaze_x': gaze_x, 'gaze_y': gaze_y, 'gaze_confidence': confidence}
+        self.gaze_history.append(gaze_data)
+        
+        # Return smoothed values
+        if len(self.gaze_history) > 1:
+            avg_gaze_x = sum(d['gaze_x'] for d in self.gaze_history) / len(self.gaze_history)
+            avg_gaze_y = sum(d['gaze_y'] for d in self.gaze_history) / len(self.gaze_history)
+            avg_confidence = sum(d['gaze_confidence'] for d in self.gaze_history) / len(self.gaze_history)
+            
+            return {'gaze_x': avg_gaze_x, 'gaze_y': avg_gaze_y, 'gaze_confidence': avg_confidence}
+        
+        return gaze_data
+
 @dataclass
 class FaceDetection:
     """Face detection result."""
@@ -29,6 +225,7 @@ class FaceDetection:
     pose: Dict[str, float]  # pitch, yaw, roll
     eyes: List[Tuple[int, int, int, int]]  # eye bounding boxes
     quality_score: float
+    gaze: Dict[str, float]  # gaze_x, gaze_y, gaze_confidence
 
 class WanderingMindDetector:
     """wandering-mind-detector using OpenCV Haar Cascades."""
@@ -40,6 +237,10 @@ class WanderingMindDetector:
         # Load Haar cascade classifiers
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        
+        # Initialize pose and gaze estimators
+        self.pose_estimator = HeadPoseEstimator()
+        self.gaze_estimator = EyeGazeEstimator()
         
         # Detection history for temporal smoothing
         self.detection_history = deque(maxlen=10)
@@ -81,12 +282,18 @@ class WanderingMindDetector:
             # Convert eye coordinates to frame coordinates
             eye_boxes = [(x + ex, y + ey, ew, eh) for ex, ey, ew, eh in eyes]
             
-            # Simple pose estimation (placeholder)
-            pose = {
-                'pitch': 0.0,
-                'yaw': 0.0,
-                'roll': 0.0
-            }
+            # Estimate head pose using 3D pose estimation
+            pose = self.pose_estimator.estimate_pose(
+                face_bbox=(x, y, w, h),
+                eyes=eye_boxes,
+                frame_shape=frame.shape[:2]
+            )
+            
+            # Estimate gaze direction
+            gaze = self.gaze_estimator.estimate_gaze(
+                eyes=eye_boxes,
+                face_bbox=(x, y, w, h)
+            )
             
             detection = FaceDetection(
                 bbox=(x, y, w, h),
@@ -94,7 +301,8 @@ class WanderingMindDetector:
                 person_id=self.person_counter + i,
                 pose=pose,
                 eyes=eye_boxes,
-                quality_score=confidence
+                quality_score=confidence,
+                gaze=gaze
             )
             
             detections.append(detection)
@@ -187,7 +395,7 @@ class NeumorphismUI:
         
         # Person cards with enhanced styling
         y_offset = detection_y + card_height + 25
-        card_height = 140
+        card_height = 180  # Increased to accommodate gaze information
         card_width = self.panel_width - 30
         
         for i, detection in enumerate(detections):
@@ -214,6 +422,11 @@ class NeumorphismUI:
             roll = detection.pose['roll']
             yaw = detection.pose['yaw']
             
+            # Gaze values
+            gaze_x = detection.gaze['gaze_x']
+            gaze_y = detection.gaze['gaze_y']
+            gaze_conf = detection.gaze['gaze_confidence']
+            
             # Pose header
             self.draw_gradient_text(panel, "HEAD POSE", (25, card_y + 95), 
                                   0.5, 1, self.colors['accent'])
@@ -224,6 +437,18 @@ class NeumorphismUI:
             self.draw_gradient_text(panel, f"Roll: {roll:.1f}°", (25, card_y + 130), 
                                   0.4, 1, self.colors['text'])
             self.draw_gradient_text(panel, f"Yaw: {yaw:.1f}°", (25, card_y + 145), 
+                                  0.4, 1, self.colors['text'])
+            
+            # Gaze header
+            self.draw_gradient_text(panel, "GAZE DIRECTION", (25, card_y + 165), 
+                                  0.5, 1, self.colors['accent'])
+            
+            # Gaze values
+            self.draw_gradient_text(panel, f"X: {gaze_x:.2f}", (25, card_y + 185), 
+                                  0.4, 1, self.colors['text'])
+            self.draw_gradient_text(panel, f"Y: {gaze_y:.2f}", (25, card_y + 200), 
+                                  0.4, 1, self.colors['text'])
+            self.draw_gradient_text(panel, f"Conf: {gaze_conf:.2f}", (25, card_y + 215), 
                                   0.4, 1, self.colors['text'])
         
         # Draw enhanced face bounding boxes on main frame
@@ -248,6 +473,29 @@ class NeumorphismUI:
             for ex, ey, ew, eh in detection.eyes:
                 cv2.circle(frame, (ex + ew//2, ey + eh//2), max(ew, eh)//2, 
                           self.colors['eye_box'], 2)
+            
+            # Draw gaze direction arrow
+            gaze_x = detection.gaze['gaze_x']
+            gaze_y = detection.gaze['gaze_y']
+            gaze_conf = detection.gaze['gaze_confidence']
+            
+            if gaze_conf > 0.3:  # Only draw if confidence is reasonable
+                # Calculate arrow start and end points
+                face_center_x = x + w // 2
+                face_center_y = y + h // 2
+                
+                # Scale gaze vector
+                arrow_length = min(w, h) // 3
+                end_x = int(face_center_x + gaze_x * arrow_length)
+                end_y = int(face_center_y + gaze_y * arrow_length)
+                
+                # Draw gaze arrow
+                cv2.arrowedLine(frame, (face_center_x, face_center_y), 
+                              (end_x, end_y), self.colors['eye_box'], 3, tipLength=0.3)
+                
+                # Draw gaze confidence circle
+                cv2.circle(frame, (face_center_x, face_center_y), 
+                          int(gaze_conf * 20), self.colors['eye_box'], 1)
         
         # Combine frame and panel
         combined = np.hstack([frame, panel])

@@ -107,84 +107,147 @@ class WanderingMindDetector:
         
         return detections
 
-class SimpleUI:
-    """Simple UI for displaying face detection results."""
+class NeumorphismUI:
+    """Modern neumorphism UI for displaying face detection results."""
     
-    def __init__(self, panel_width: int = 300):
+    def __init__(self, panel_width: int = 320):
         self.panel_width = panel_width
         self.colors = {
-            'background': (240, 240, 240),
-            'panel': (250, 250, 250),
-            'text': (50, 50, 50),
-            'face_box': (0, 255, 0),
-            'eye_box': (255, 0, 0),
-            'text_bg': (255, 255, 255)
+            'background': (45, 45, 45),      # Dark background
+            'panel': (55, 55, 55),           # Slightly lighter panel
+            'text': (255, 255, 255),         # White text
+            'text_secondary': (200, 200, 200), # Light gray secondary text
+            'face_box': (0, 255, 100),       # Bright green for faces
+            'eye_box': (100, 200, 255),      # Blue for eyes
+            'card_bg': (65, 65, 65),         # Card background
+            'card_shadow_dark': (35, 35, 35), # Dark shadow
+            'card_shadow_light': (75, 75, 75), # Light shadow
+            'accent': (100, 150, 255),       # Accent color
+            'success': (0, 255, 100),        # Success green
+            'warning': (255, 200, 0)         # Warning yellow
         }
     
+    def draw_sunken_card(self, panel: np.ndarray, x: int, y: int, width: int, height: int):
+        """Draw a neumorphism sunken card effect."""
+        # Draw dark shadow (bottom-right)
+        cv2.rectangle(panel, (x + 2, y + 2), (x + width + 2, y + height + 2), 
+                     self.colors['card_shadow_dark'], -1)
+        
+        # Draw light shadow (top-left)
+        cv2.rectangle(panel, (x - 2, y - 2), (x + width - 2, y + height - 2), 
+                     self.colors['card_shadow_light'], -1)
+        
+        # Draw main card
+        cv2.rectangle(panel, (x, y), (x + width, y + height), 
+                     self.colors['card_bg'], -1)
+        
+        # Draw subtle border
+        cv2.rectangle(panel, (x, y), (x + width, y + height), 
+                     self.colors['text_secondary'], 1)
+    
+    def draw_gradient_text(self, panel: np.ndarray, text: str, pos: tuple, 
+                          font_scale: float, thickness: int, color: tuple):
+        """Draw text with subtle gradient effect."""
+        x, y = pos
+        # Draw shadow
+        cv2.putText(panel, text, (x + 1, y + 1), 
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), thickness)
+        # Draw main text
+        cv2.putText(panel, text, (x, y), 
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
+    
     def render(self, frame: np.ndarray, detections: List[FaceDetection], fps: float) -> np.ndarray:
-        """Render the UI on the frame."""
+        """Render the modern neumorphism UI."""
         h, w = frame.shape[:2]
         
-        # Create side panel
-        panel = np.full((h, self.panel_width, 3), self.colors['panel'], dtype=np.uint8)
+        # Create dark side panel
+        panel = np.full((h, self.panel_width, 3), self.colors['background'], dtype=np.uint8)
         
-        # Draw header
-        cv2.putText(panel, "wandering-mind-detector", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, self.colors['text'], 2)
+        # Draw header with gradient effect
+        self.draw_gradient_text(panel, "WANDERING MIND", (15, 35), 
+                              0.8, 2, self.colors['text'])
+        self.draw_gradient_text(panel, "DETECTOR", (15, 60), 
+                              0.6, 1, self.colors['text_secondary'])
         
-        # Draw FPS
-        cv2.putText(panel, f"FPS: {fps:.1f}", (10, 60), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.colors['text'], 1)
+        # Draw status cards
+        status_y = 90
+        card_width = self.panel_width - 30
+        card_height = 50
         
-        # Draw detection count
-        cv2.putText(panel, f"Faces: {len(detections)}", (10, 80), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.colors['text'], 1)
+        # FPS Card
+        self.draw_sunken_card(panel, 15, status_y, card_width, card_height)
+        self.draw_gradient_text(panel, f"FPS: {fps:.1f}", (25, status_y + 30), 
+                              0.6, 2, self.colors['success'])
         
-        # Draw person cards with pitch, roll, yaw values
-        y_offset = 110
-        card_height = 120
-        card_width = self.panel_width - 20
+        # Detection Count Card
+        detection_y = status_y + card_height + 15
+        self.draw_sunken_card(panel, 15, detection_y, card_width, card_height)
+        self.draw_gradient_text(panel, f"FACES: {len(detections)}", (25, detection_y + 30), 
+                              0.6, 2, self.colors['accent'])
+        
+        # Person cards with enhanced styling
+        y_offset = detection_y + card_height + 25
+        card_height = 140
+        card_width = self.panel_width - 30
         
         for i, detection in enumerate(detections):
-            # Draw card background
-            card_y = y_offset + (i * (card_height + 10))
-            cv2.rectangle(panel, (10, card_y), (card_width + 10, card_y + card_height), 
-                         self.colors['text_bg'], -1)
-            cv2.rectangle(panel, (10, card_y), (card_width + 10, card_y + card_height), 
-                         self.colors['text'], 2)
+            card_y = y_offset + (i * (card_height + 15))
             
-            # Person ID
-            cv2.putText(panel, f"Person {detection.person_id}", (20, card_y + 25), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.colors['text'], 1)
+            # Draw sunken card
+            self.draw_sunken_card(panel, 15, card_y, card_width, card_height)
             
-            # Confidence
-            cv2.putText(panel, f"Confidence: {detection.confidence:.2f}", (20, card_y + 45), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            # Person header
+            self.draw_gradient_text(panel, f"PERSON {detection.person_id}", 
+                                  (25, card_y + 25), 0.7, 2, self.colors['text'])
+            
+            # Confidence with color coding
+            conf_color = self.colors['success'] if detection.confidence > 0.7 else self.colors['warning']
+            self.draw_gradient_text(panel, f"Confidence: {detection.confidence:.2f}", 
+                                  (25, card_y + 50), 0.5, 1, conf_color)
             
             # Eyes count
-            cv2.putText(panel, f"Eyes: {len(detection.eyes)}", (20, card_y + 65), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            self.draw_gradient_text(panel, f"Eyes Detected: {len(detection.eyes)}", 
+                                  (25, card_y + 70), 0.5, 1, self.colors['text_secondary'])
             
-            # Pitch, Roll, Yaw values in card
+            # Pose values with enhanced styling
             pitch = detection.pose['pitch']
             roll = detection.pose['roll']
             yaw = detection.pose['yaw']
             
-            cv2.putText(panel, f"Pitch: {pitch:.1f}°", (20, card_y + 85), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
-            cv2.putText(panel, f"Roll: {roll:.1f}°", (20, card_y + 105), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
-            cv2.putText(panel, f"Yaw: {yaw:.1f}°", (20, card_y + 125), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, self.colors['text'], 1)
+            # Pose header
+            self.draw_gradient_text(panel, "HEAD POSE", (25, card_y + 95), 
+                                  0.5, 1, self.colors['accent'])
+            
+            # Pose values in a grid
+            self.draw_gradient_text(panel, f"Pitch: {pitch:.1f}°", (25, card_y + 115), 
+                                  0.4, 1, self.colors['text'])
+            self.draw_gradient_text(panel, f"Roll: {roll:.1f}°", (25, card_y + 130), 
+                                  0.4, 1, self.colors['text'])
+            self.draw_gradient_text(panel, f"Yaw: {yaw:.1f}°", (25, card_y + 145), 
+                                  0.4, 1, self.colors['text'])
         
-        # Draw face bounding boxes on main frame
+        # Draw enhanced face bounding boxes on main frame
         for detection in detections:
             x, y, w, h = detection.bbox
-            cv2.rectangle(frame, (x, y), (x + w, y + h), self.colors['face_box'], 2)
             
-            # Draw eyes
+            # Draw face box with gradient effect
+            cv2.rectangle(frame, (x, y), (x + w, y + h), self.colors['face_box'], 3)
+            
+            # Draw corner markers
+            corner_size = 15
+            cv2.line(frame, (x, y), (x + corner_size, y), self.colors['face_box'], 3)
+            cv2.line(frame, (x, y), (x, y + corner_size), self.colors['face_box'], 3)
+            cv2.line(frame, (x + w, y), (x + w - corner_size, y), self.colors['face_box'], 3)
+            cv2.line(frame, (x + w, y), (x + w, y + corner_size), self.colors['face_box'], 3)
+            cv2.line(frame, (x, y + h), (x + corner_size, y + h), self.colors['face_box'], 3)
+            cv2.line(frame, (x, y + h), (x, y + h - corner_size), self.colors['face_box'], 3)
+            cv2.line(frame, (x + w, y + h), (x + w - corner_size, y + h), self.colors['face_box'], 3)
+            cv2.line(frame, (x + w, y + h), (x + w, y + h - corner_size), self.colors['face_box'], 3)
+            
+            # Draw eyes with enhanced styling
             for ex, ey, ew, eh in detection.eyes:
-                cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), self.colors['eye_box'], 1)
+                cv2.circle(frame, (ex + ew//2, ey + eh//2), max(ew, eh)//2, 
+                          self.colors['eye_box'], 2)
         
         # Combine frame and panel
         combined = np.hstack([frame, panel])
@@ -196,7 +259,7 @@ class WanderingMindApp:
     def __init__(self, camera_index: int = 0):
         self.camera_index = camera_index
         self.detector = WanderingMindDetector()
-        self.ui = SimpleUI()
+        self.ui = NeumorphismUI()
         self.cap = None
         self.running = False
         

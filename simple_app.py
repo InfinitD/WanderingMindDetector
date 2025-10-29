@@ -259,17 +259,16 @@ class Pose3DMeshVisualizer:
         
         # Convert to image
         self.fig.canvas.draw()
-        # Get buffer from canvas
+        # Get buffer from canvas (use new method for newer matplotlib)
         try:
-            buf = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
-        except AttributeError:
-            # For newer matplotlib versions
+            # Try newer method first
             buf = np.frombuffer(self.fig.canvas.buffer_rgba(), dtype=np.uint8)
             buf = buf.reshape(self.fig.canvas.get_width_height()[::-1] + (4,))
-            buf = buf[:, :, :3]  # Remove alpha channel
-            return cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
-        
-        buf = buf.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
+            buf = buf[:, :, :3]  # Remove alpha channel, keep RGB
+        except AttributeError:
+            # Fallback to older method
+            buf = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
+            buf = buf.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
         
         # Convert RGB to BGR for OpenCV
         img = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)

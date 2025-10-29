@@ -70,39 +70,50 @@ class SOTAFacialLandmarkDetector:
             self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
 class SOTAHeadPoseEstimator:
-    """State-of-the-art head pose estimation with FaceID-level precision."""
+    """State-of-the-art head pose estimation with accurate pitch calculation."""
     
     def __init__(self):
         self.landmark_detector = SOTAFacialLandmarkDetector()
         
-        # Enhanced 3D model points for better accuracy
+        # SOTA 3D facial model points (in mm) - more comprehensive
         self.model_points = np.array([
             (0.0, 0.0, 0.0),             # Nose tip
             (0.0, -330.0, -65.0),        # Chin
             (-165.0, -170.0, -135.0),    # Left eye left corner
             (165.0, -170.0, -135.0),     # Right eye right corner
             (-150.0, -150.0, -125.0),    # Left mouth corner
-            (150.0, -150.0, -125.0)      # Right mouth corner
+            (150.0, -150.0, -125.0),     # Right mouth corner
+            (-50.0, -200.0, -100.0),     # Left cheek
+            (50.0, -200.0, -100.0),      # Right cheek
+            (0.0, -250.0, -80.0),        # Lower chin
+            (-100.0, -170.0, -135.0),    # Left eye right corner
+            (100.0, -170.0, -135.0),     # Right eye left corner
         ], dtype=np.float64)
         
         # Camera matrix
         self.camera_matrix = None
         self.dist_coeffs = np.zeros((4, 1))
         
-        # Pose smoothing
-        self.pose_history = deque(maxlen=8)
+        # Pose smoothing and validation
+        self.pose_history = deque(maxlen=10)
         self.smoothed_pose = {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
+        self.pose_confidence = 0.0
+        
+        # Reference pose for calibration
+        self.reference_pose = None
+        self.calibrated = False
         
     def estimate_pose(self, face_bbox: Tuple[int, int, int, int], 
                      eyes: List[Tuple[int, int, int, int]], 
                      frame_shape: Tuple[int, int]) -> Dict[str, float]:
-        """Estimate head pose with FaceID-level precision."""
+        """Estimate head pose with accurate pitch calculation using SOTA methods."""
         x, y, w, h = face_bbox
         frame_h, frame_w = frame_shape
         
-        # Initialize camera matrix if not set
+        # Initialize camera matrix with proper focal length estimation
         if self.camera_matrix is None:
-            focal_length = frame_w
+            # More accurate focal length estimation
+            focal_length = max(frame_w, frame_h) * 0.8
             center_x = frame_w / 2.0
             center_y = frame_h / 2.0
             self.camera_matrix = np.array([
@@ -111,20 +122,20 @@ class SOTAHeadPoseEstimator:
                 [0, 0, 1]
             ], dtype=np.float64)
         
-        # Calculate enhanced 2D image points with sub-pixel accuracy
-        image_points = self._calculate_enhanced_image_points(x, y, w, h, eyes, frame_w, frame_h)
+        # Calculate enhanced 2D image points with better accuracy
+        image_points = self._calculate_precise_image_points(x, y, w, h, eyes, frame_w, frame_h)
         
-        if len(image_points) < 4:
+        if len(image_points) < 6:  # Need at least 6 points for stable estimation
             return self.smoothed_pose
         
         try:
-            # Use more robust PnP solving with better parameters
+            # Use EPnP for better accuracy with more points
             success, rotation_vector, translation_vector = cv2.solvePnP(
                 self.model_points[:len(image_points)],
                 image_points,
                 self.camera_matrix,
                 self.dist_coeffs,
-                flags=cv2.SOLVEPNP_ITERATIVE,
+                flags=cv2.SOLVEPNP_EPNP,  # More accurate for many points
                 useExtrinsicGuess=False
             )
             
@@ -134,22 +145,29 @@ class SOTAHeadPoseEstimator:
             # Convert rotation vector to rotation matrix
             rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
             
-            # Extract Euler angles with improved accuracy
-            pitch, yaw, roll = self._rotation_matrix_to_euler_angles(rotation_matrix)
+            # Extract Euler angles using proper rotation order (ZYX)
+            pitch, yaw, roll = self._extract_euler_angles_zyx(rotation_matrix)
             
             # Convert to degrees
             pitch = math.degrees(pitch)
             yaw = math.degrees(yaw)
             roll = math.degrees(roll)
             
-            # Apply advanced smoothing and filtering
-            raw_pose = {'pitch': pitch, 'yaw': yaw, 'roll': roll}
-            smoothed_pose = self._apply_pose_smoothing(raw_pose)
+            # Apply calibration if available
+            if self.calibrated and self.reference_pose:
+                pitch -= self.reference_pose['pitch']
+                yaw -= self.reference_pose['yaw']
+                roll -= self.reference_pose['roll']
             
+            # Apply advanced smoothing and validation
+            raw_pose = {'pitch': pitch, 'yaw': yaw, 'roll': roll}
+            smoothed_pose, confidence = self._apply_sota_smoothing(raw_pose)
+            
+            self.pose_confidence = confidence
             return smoothed_pose
             
         except Exception as e:
-            logger.warning(f"Enhanced head pose estimation failed: {e}")
+            logger.warning(f"SOTA head pose estimation failed: {e}")
             return self.smoothed_pose
     
     def _calculate_image_points(self, x: int, y: int, w: int, h: int, 
@@ -309,7 +327,7 @@ class SOTAGazeEstimator:
         
     def estimate_gaze_from_pose(self, pose: Dict[str, float], 
                               face_bbox: Tuple[int, int, int, int]) -> Dict[str, float]:
-        """Estimate gaze direction from head pose using advanced algorithms."""
+        """Estimate gaze direction directly from head pose values for accurate arrow projection."""
         pitch = pose['pitch']
         yaw = pose['yaw']
         roll = pose['roll']
@@ -319,40 +337,25 @@ class SOTAGazeEstimator:
         yaw_rad = math.radians(yaw)
         roll_rad = math.radians(roll)
         
-        # Create rotation matrices for each axis
-        Rx = np.array([
-            [1, 0, 0],
-            [0, math.cos(pitch_rad), -math.sin(pitch_rad)],
-            [0, math.sin(pitch_rad), math.cos(pitch_rad)]
-        ])
+        # Direct projection from head pose to screen coordinates
+        # Pitch affects Y direction (up/down)
+        # Yaw affects X direction (left/right)
+        # Roll affects rotation but not gaze direction
         
-        Ry = np.array([
-            [math.cos(yaw_rad), 0, math.sin(yaw_rad)],
-            [0, 1, 0],
-            [-math.sin(yaw_rad), 0, math.cos(yaw_rad)]
-        ])
+        # Calculate gaze direction directly from pose angles
+        gaze_x = math.sin(yaw_rad) * 0.8  # Scale for screen projection
+        gaze_y = math.sin(pitch_rad) * 0.6  # Scale for screen projection
         
-        Rz = np.array([
-            [math.cos(roll_rad), -math.sin(roll_rad), 0],
-            [math.sin(roll_rad), math.cos(roll_rad), 0],
-            [0, 0, 1]
-        ])
+        # Apply roll rotation to gaze vector
+        cos_roll = math.cos(roll_rad)
+        sin_roll = math.sin(roll_rad)
         
-        # Combine rotations (order: roll, pitch, yaw)
-        R = Rz @ Rx @ Ry
+        # Rotate gaze vector by roll angle
+        rotated_gaze_x = gaze_x * cos_roll - gaze_y * sin_roll
+        rotated_gaze_y = gaze_x * sin_roll + gaze_y * cos_roll
         
-        # Initial gaze vector (looking forward)
-        initial_gaze = np.array([0.0, 0.0, -1.0])
-        
-        # Apply rotation to get gaze direction
-        gaze_vector_3d = R @ initial_gaze
-        
-        # Project to 2D screen coordinates
-        gaze_x = gaze_vector_3d[0] * 0.8  # Scale for screen projection
-        gaze_y = gaze_vector_3d[1] * 0.6  # Scale for screen projection
-        
-        # Apply advanced smoothing using Kalman-like filtering
-        smoothed_gaze = self._apply_advanced_smoothing(gaze_x, gaze_y)
+        # Apply advanced smoothing
+        smoothed_gaze = self._apply_advanced_smoothing(rotated_gaze_x, rotated_gaze_y)
         
         # Calculate confidence based on pose stability
         confidence = self._calculate_pose_confidence(pose)
@@ -436,6 +439,134 @@ class SOTAGazeEstimator:
         # Combine factors
         confidence = (1.0 - extreme_penalty) * stability_score
         return max(0.1, min(1.0, confidence))
+    
+    def _calculate_precise_image_points(self, x: int, y: int, w: int, h: int, 
+                                      eyes: List[Tuple[int, int, int, int]], 
+                                      frame_w: int, frame_h: int) -> np.ndarray:
+        """Calculate precise 2D image points with enhanced accuracy."""
+        points = []
+        
+        # Nose tip (center of face)
+        nose_x = x + w / 2.0
+        nose_y = y + h / 2.0
+        points.append([nose_x, nose_y])
+        
+        # Chin (bottom center of face)
+        chin_x = x + w / 2.0
+        chin_y = y + h
+        points.append([chin_x, chin_y])
+        
+        # Enhanced eye position calculation
+        if len(eyes) >= 2:
+            # Sort eyes by x position
+            sorted_eyes = sorted(eyes, key=lambda eye: eye[0])
+            
+            # Left eye corners
+            left_eye = sorted_eyes[0]
+            left_eye_left_x = left_eye[0]
+            left_eye_left_y = left_eye[1] + left_eye[3] / 2.0
+            left_eye_right_x = left_eye[0] + left_eye[2]
+            left_eye_right_y = left_eye[1] + left_eye[3] / 2.0
+            
+            points.append([left_eye_left_x, left_eye_left_y])
+            points.append([left_eye_right_x, left_eye_right_y])
+            
+            # Right eye corners
+            right_eye = sorted_eyes[1]
+            right_eye_left_x = right_eye[0]
+            right_eye_left_y = right_eye[1] + right_eye[3] / 2.0
+            right_eye_right_x = right_eye[0] + right_eye[2]
+            right_eye_right_y = right_eye[1] + right_eye[3] / 2.0
+            
+            points.append([right_eye_left_x, right_eye_left_y])
+            points.append([right_eye_right_x, right_eye_right_y])
+            
+            # Mouth corners
+            mouth_y = y + h * 0.75
+            mouth_left_x = x + w * 0.25
+            mouth_right_x = x + w * 0.75
+            points.append([mouth_left_x, mouth_y])
+            points.append([mouth_right_x, mouth_y])
+            
+            # Cheek points
+            cheek_y = y + h * 0.6
+            left_cheek_x = x + w * 0.15
+            right_cheek_x = x + w * 0.85
+            points.append([left_cheek_x, cheek_y])
+            points.append([right_cheek_x, cheek_y])
+            
+            # Lower chin
+            lower_chin_x = x + w / 2.0
+            lower_chin_y = y + h * 0.9
+            points.append([lower_chin_x, lower_chin_y])
+        
+        return np.array(points, dtype=np.float64)
+    
+    def _extract_euler_angles_zyx(self, R: np.ndarray) -> Tuple[float, float, float]:
+        """Extract Euler angles using ZYX rotation order (proper pitch calculation)."""
+        # ZYX rotation order: Roll (Z) -> Pitch (Y) -> Yaw (X)
+        
+        # Extract individual rotation angles
+        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+        
+        singular = sy < 1e-6
+        
+        if not singular:
+            # Normal case
+            roll = math.atan2(R[2, 1], R[2, 2])      # Z rotation
+            pitch = math.atan2(-R[2, 0], sy)         # Y rotation (this is the correct pitch!)
+            yaw = math.atan2(R[1, 0], R[0, 0])       # X rotation
+        else:
+            # Singular case
+            roll = math.atan2(-R[1, 2], R[1, 1])
+            pitch = math.atan2(-R[2, 0], sy)
+            yaw = 0
+        
+        return pitch, yaw, roll
+    
+    def _apply_sota_smoothing(self, raw_pose: Dict[str, float]) -> Tuple[Dict[str, float], float]:
+        """Apply SOTA smoothing with confidence estimation."""
+        # Store current pose
+        self.pose_history.append(raw_pose)
+        
+        if len(self.pose_history) < 3:
+            return raw_pose, 0.5
+        
+        # Calculate confidence based on pose stability
+        recent_poses = list(self.pose_history)[-5:]
+        pitch_std = np.std([p['pitch'] for p in recent_poses])
+        yaw_std = np.std([p['yaw'] for p in recent_poses])
+        roll_std = np.std([p['roll'] for p in recent_poses])
+        
+        # Lower std = higher confidence
+        confidence = max(0.1, 1.0 - (pitch_std + yaw_std + roll_std) / 180.0)
+        
+        # Apply weighted moving average with confidence weighting
+        weights = np.exp(np.linspace(-1.5, 0, len(self.pose_history)))
+        weights = weights / np.sum(weights)
+        
+        smoothed_pitch = sum(p['pitch'] * w for p, w in zip(self.pose_history, weights))
+        smoothed_yaw = sum(p['yaw'] * w for p, w in zip(self.pose_history, weights))
+        smoothed_roll = sum(p['roll'] * w for p, w in zip(self.pose_history, weights))
+        
+        # Apply outlier rejection based on confidence
+        if confidence < 0.7:  # Low confidence, use previous smoothed values
+            smoothed_pitch = self.smoothed_pose['pitch']
+            smoothed_yaw = self.smoothed_pose['yaw']
+            smoothed_roll = self.smoothed_pose['roll']
+        
+        # Clamp values to reasonable ranges
+        smoothed_pitch = max(-90, min(90, smoothed_pitch))
+        smoothed_yaw = max(-90, min(90, smoothed_yaw))
+        smoothed_roll = max(-90, min(90, smoothed_roll))
+        
+        self.smoothed_pose = {
+            'pitch': smoothed_pitch,
+            'yaw': smoothed_yaw,
+            'roll': smoothed_roll
+        }
+        
+        return self.smoothed_pose, confidence
 
 @dataclass
 class FaceDetection:

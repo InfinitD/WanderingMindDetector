@@ -1138,8 +1138,8 @@ class WanderingMindDetector:
         
         return detections
 
-class NeumorphismUI:
-    """Modern neumorphism UI for displaying face detection results."""
+class DisplayUI:
+    """Display UI for showing face detection results."""
     
     def __init__(self, panel_width: int = 320):
         self.panel_width = panel_width
@@ -1159,8 +1159,8 @@ class NeumorphismUI:
             'warning': (255, 200, 0)         # Warning yellow
         }
     
-    def draw_sunken_card(self, panel: np.ndarray, x: int, y: int, width: int, height: int):
-        """Draw a neumorphism sunken card effect."""
+    def draw_card(self, panel: np.ndarray, x: int, y: int, width: int, height: int):
+        """Draw a card with shadow effect."""
         # Draw dark shadow (bottom-right)
         cv2.rectangle(panel, (x + 2, y + 2), (x + width + 2, y + height + 2), 
                      self.colors['card_shadow_dark'], -1)
@@ -1190,7 +1190,7 @@ class NeumorphismUI:
     
     def render(self, frame: np.ndarray, detections: List[FaceDetection], fps: float, 
                metrics: Optional[PoseAccuracyMetrics] = None) -> np.ndarray:
-        """Render the modern neumorphism UI."""
+        """Render the display UI."""
         h, w = frame.shape[:2]
         
         # Create dark side panel
@@ -1208,13 +1208,13 @@ class NeumorphismUI:
         card_height = 50
         
         # FPS Card
-        self.draw_sunken_card(panel, 15, status_y, card_width, card_height)
+        self.draw_card(panel, 15, status_y, card_width, card_height)
         self.draw_gradient_text(panel, f"FPS: {fps:.1f}", (25, status_y + 30), 
                               0.6, 2, self.colors['success'])
         
         # Detection Count Card
         detection_y = status_y + card_height + 15
-        self.draw_sunken_card(panel, 15, detection_y, card_width, card_height)
+        self.draw_card(panel, 15, detection_y, card_width, card_height)
         self.draw_gradient_text(panel, f"FACES: {len(detections)}", (25, detection_y + 30), 
                               0.6, 2, self.colors['accent'])
         
@@ -1223,7 +1223,7 @@ class NeumorphismUI:
             metrics_y = detection_y + card_height + 15
             stats = metrics.get_stats()
             
-            self.draw_sunken_card(panel, 15, metrics_y, card_width, card_height + 40)
+            self.draw_card(panel, 15, metrics_y, card_width, card_height + 40)
             self.draw_gradient_text(panel, "ACCURACY METRICS", (25, metrics_y + 20), 
                                   0.5, 1, self.colors['accent'])
             
@@ -1250,7 +1250,7 @@ class NeumorphismUI:
             card_y = y_offset + (i * (card_height + 15))
             
             # Draw sunken card
-            self.draw_sunken_card(panel, 15, card_y, card_width, card_height)
+            self.draw_card(panel, 15, card_y, card_width, card_height)
             
             # Person header
             self.draw_gradient_text(panel, f"PERSON {detection.person_id}", 
@@ -1359,8 +1359,9 @@ class WanderingMindApp:
     def __init__(self, camera_index: int = 0):
         self.camera_index = camera_index
         self.detector = WanderingMindDetector()
-        self.ui = NeumorphismUI()
+        self.ui = DisplayUI()
         self.mesh_visualizer = Pose3DMeshVisualizer() if MPL_AVAILABLE else None
+        self.last_pose = {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
         self.cap = None
         self.running = False
         
@@ -1419,10 +1420,15 @@ class WanderingMindApp:
                 metrics = self.detector.pose_estimator.metrics
                 display_frame = self.ui.render(frame, detections, fps, metrics)
                 
-                # Generate 3D mesh visualization if available
-                if self.mesh_visualizer and detections:
-                    first_detection = detections[0]
-                    pose = first_detection.pose
+                # Generate 3D mesh visualization if available (always show)
+                if self.mesh_visualizer:
+                    # Use detected pose or last known pose
+                    if detections:
+                        pose = detections[0].pose
+                        self.last_pose = pose
+                    else:
+                        pose = self.last_pose
+                    
                     mesh_img = self.mesh_visualizer.update_pose(
                         pose['pitch'], pose['yaw'], pose['roll']
                     )

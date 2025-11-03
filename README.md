@@ -1,152 +1,76 @@
-# wandering-mind-detector - Multi-Person Face & Eye Tracking System
+# wandering-mind-detector - Lightweight Head Pose & Gaze Demo
 
-A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 integration, designed for real-time monitoring and analysis of attention and mind wandering patterns.
+Lightweight, camera-based head pose (pitch, yaw, roll) and gaze direction demo with real-time overlay and optional accuracy metrics. Detectron2 and legacy UIs were removed to keep the stack simple and fast.
 
 ## Features
 
-### SOTA Detection Algorithm
-- **Facebook Detectron2** integration for state-of-the-art object detection
-- **Multi-person tracking** (2-3 people optimal performance)
-- **Adaptive detection** for various lighting conditions
-- **Robust eye tracking** with occlusion handling
-- **Pose-invariant detection** for different face angles
-- **Auto-scaling features** for optimal performance
-- **Temporal smoothing** for stable tracking
-- **GPU acceleration** support for real-time performance
+### Core Features
+- Real-time head pose estimation (pitch, yaw, roll)
+- Gaze direction visualization with smoothing
+- Accuracy metrics (reprojection error, MAE, angular error)
+- Always-on 3D pose mesh preview (matplotlib)
 
-### Abstract Geometric Visualization
-- **Real-time mannequin widgets** with 3D pose representation
-- **Head pose mapping** (pitch, yaw, roll degrees of freedom)
-- **Gaze direction visualization** with angle indicators
-- **Multi-person grid layout** for simultaneous tracking
-- **Smooth animation** with interpolation
-- **Color-coded elements** for intuitive understanding
+### Visualization
+- Inline UI panel with cards for FPS, counts, and pose values
+- 3D mesh (axes, head sphere, gaze vector)
 
 ## Project Structure
 
 ```
 wandering-mind-detector/
+├── simple_app.py                  # Main application (head pose + gaze + UI)
 ├── src/
-│   ├── wmdetector_app.py          # Main WMDetector application
-│   ├── detectron_detector.py      # Facebook Detectron2 integration
-│   ├── wmd_app.py                 # Enhanced main application
-│   ├── enhanced_ui.py             # Enhanced UI with AOI system
-│   ├── enhanced_detector.py       # Enhanced detection system
-│   ├── high_performance_detector.py # High-performance detector
-│   ├── yolo_face_detector.py      # YOLO-style detector
-│   ├── eye_detector.py            # Eye detection module
-│   ├── gaze_analyzer.py           # Gaze analysis algorithms
-│   └── constants.py               # Application constants
-├── models/                         # Haar cascade classifiers
+│   └── metrics/
+│       ├── __init__.py
+│       └── accuracy.py            # Reprojection error, MAE, angular error
+├── models/                        # Haar cascade classifiers
 ├── requirements.txt               # Python dependencies
-├── install_detectron2.py          # Detectron2 installation script
 ├── README.md                      # This file
-└── COMPREHENSIVE_REDESIGN.md      # Detailed implementation guide
+└── Dockerfile, docker-compose.yml # Optional containerization
 ```
 
 ## Installation
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.8+
 - Camera access permissions
 - Adequate lighting for face detection
-- CUDA support (recommended for Detectron2)
 
 ### Quick Setup
 ```bash
-# Clone or navigate to wandering-mind-detector directory
-cd wandering-mind-detector
-
-# Install Detectron2 and dependencies (recommended)
-python install_detectron2.py
-
-# Or install manually
+cd wandering-mind-detector/Cursey
 pip install -r requirements.txt
-
-# Run the Detectron2 application
-cd src
-python detectron_main_app.py
+python3 simple_app.py
 ```
 
-### Advanced Usage
-```bash
-# Specify camera index, max persons, and GPU usage
-python detectron_main_app.py 0 3 true
-
-# Camera 0, max 3 people, GPU enabled
-python detectron_main_app.py 1 2 false
-
-# Camera 1, max 2 people, CPU only
-```
+### Options
+- Press `q` to quit, `r` to reset smoothing/metrics.
 
 ## Controls
-
-### Mouse Controls
-- Click buttons in the side panel for:
-  - **Reset AOI**: Set Area of Interest reference
-  - **Detection ON/OFF**: Toggle detection system
-  - **Interactive elements**: Modern neumorphism buttons
 
 ### Keyboard Shortcuts
 - `q` - Quit application
 - `r` - Reset session
-- `d` - Toggle detection on/off
 
 ## Technical Specifications
 
 ### Performance
-- **Max Persons**: 2-3 (optimal performance)
-- **Target FPS**: 30+ FPS with Detectron2
-- **Resolution**: 640x480 (camera), 380px side panel
-- **Memory**: Optimized for real-time processing
-- **GPU**: CUDA acceleration support
-- **CPU**: Multi-threaded detection pipeline
+- Resolution: 640x480 (camera), ~320px side panel
+- Target: 30 FPS on typical CPU
 
-### Detection Capabilities
-- **Face Detection**: Detectron2 with fallback to OpenCV
-- **Eye Tracking**: Robust with occlusion handling
-- **Head Pose**: 3 degrees of freedom (pitch, yaw, roll)
-- **Gaze Angles**: 2 degrees of freedom (horizontal, vertical)
-- **Lighting Adaptation**: Dark, bright, low-contrast, normal conditions
-- **Instance Segmentation**: Detectron2 instance-level detection
+### Capabilities
+- Head Pose: 3 DOF (pitch, yaw, roll)
+- Gaze: 2 DOF projected vector
+- Metrics: reprojection error, MAE, angular error
 
-### Visualization Features
-- **Neumorphism Design**: Modern UI with depth and shadows
-- **Real-time Animation**: Smooth interpolation and movement
-- **Color Coding**: Intuitive element identification
-- **Multi-person Support**: Grid layout for multiple detections
-- **Pose Information**: Real-time angle displays
-- **Quality Metrics**: Confidence and stability scores
+### Visualization
+- UI cards for FPS, counts, pose values
+- 3D mesh window (axes, head sphere, gaze)
 
 ## Architecture
 
-### Core Components
-
-1. **DetectronFaceDetector** (`detectron_detector.py`)
-   - Facebook Detectron2 integration
-   - State-of-the-art object detection
-   - Instance segmentation capabilities
-   - GPU acceleration support
-   - Fallback to OpenCV when needed
-
-2. **NeumorphismUI** (`neumorphism_ui.py`)
-   - Modern neumorphism design
-   - Clean, intuitive interface
-   - Smooth animations
-   - Enhanced visual hierarchy
-   - Interactive controls
-
-3. **WMDetectorApp** (`wmdetector_app.py`)
-   - Main application integration
-   - Camera management and optimization
-   - Event handling and user interaction
-   - Performance monitoring and error handling
-   - Detectron2 and UI integration
-
-4. **Enhanced Components** (legacy support)
-   - EnhancedDetector for advanced detection
-   - HighPerformanceDetector for 60 FPS
-   - YOLOFaceDetector for YOLO-style detection
+- `simple_app.py`: Captures frames, detects faces (OpenCV), estimates pose/gaze, renders UI and 3D mesh.
+- `src/metrics/accuracy.py`: Accuracy metrics computation (reprojection error, MAE, angular error).
 
 ## Use Cases
 
@@ -159,28 +83,17 @@ python detectron_main_app.py 1 2 false
 
 ## Getting Started
 
-1. **Installation**:
+1. Install deps and run:
    ```bash
-   python install_detectron2.py
+   cd Cursey
+   pip install -r requirements.txt
+   python3 simple_app.py
    ```
 
-2. **Basic Usage**:
-   ```bash
-   cd src
-   python detectron_main_app.py
-   ```
-
-3. **First Run**:
-   - Grant camera permissions when prompted
-   - Detection starts automatically
-   - Position yourself in front of the camera
-   - Observe the modern UI responding to your movements
-
-4. **Multi-Person**:
-   - Have 2-3 people in front of the camera
-   - Each person gets tracked with Detectron2
-   - Real-time values display for each person
-   - Session statistics track all detections
+2. First run tips:
+   - Grant camera permissions
+   - Ensure decent lighting
+   - Use `r` to reset smoothing/metrics
 
 ## Troubleshooting
 
@@ -198,10 +111,8 @@ python detectron_main_app.py 1 2 false
 - Close unnecessary applications
 - Enable GPU acceleration if available
 
-### Detectron2 Specific
-- **Model loading**: First run may take longer to download models
-- **Memory usage**: Detectron2 requires more RAM than OpenCV
-- **GPU memory**: Ensure sufficient VRAM for GPU acceleration
+### Notes
+- If matplotlib is missing, 3D mesh will be skipped automatically.
 
 ## License
 

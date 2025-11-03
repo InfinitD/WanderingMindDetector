@@ -1,67 +1,29 @@
 """
-Cursey - Multi-Person Face & Eye Tracking System
+Cursey package (legacy namespace).
 
-A state-of-the-art multi-person face and eye tracking system with Facebook Detectron2 
-integration and modern neumorphism UI, designed for real-time monitoring and analysis.
-
-Author: Cursey Development Team
-License: MIT
-Version: 2.0.0
+This package currently only exposes versioning and constants for backward compatibility.
+All runnable code lives in `simple_app.py` and modularized sources under `src/`.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "Cursey Development Team"
 __license__ = "MIT"
-__description__ = "Multi-Person Face & Eye Tracking System with Detectron2"
+__description__ = "Wandering Mind Detector - lightweight face/pose/gaze demo"
 
-# Import main components (with optional Detectron2)
+# Optional constants (available if module layout is present)
 try:
-    from .detectors.detectron_detector import DetectronFaceDetector
-    DETECTRON_AVAILABLE = True
-except ImportError:
-    DetectronFaceDetector = None
-    DETECTRON_AVAILABLE = False
-
-from .detectors.enhanced_detector import EnhancedFaceDetector
-from .detectors.high_performance_detector import HighPerformanceDetector
-from .detectors.yolo_face_detector import YOLOFaceDetector
-from .detectors.eye_detector import EyeDetector
-from .detectors.gaze_analyzer import GazeAnalyzer
-
-try:
-    from .ui.neumorphism_ui import NeumorphismUI
-    NEUMORPHISM_AVAILABLE = True
-except ImportError:
-    NeumorphismUI = None
-    NEUMORPHISM_AVAILABLE = False
-
-from .ui.enhanced_ui import EnhancedMinimalUI
-from .ui.minimal_ui import MinimalUI
-
-from .utils.constants import AppConstants, UIConstants, DetectionConstants
+    from .utils.constants import AppConstants, UIConstants, DetectionConstants
+except Exception:
+    AppConstants = None
+    UIConstants = None
+    DetectionConstants = None
 
 __all__ = [
-    # Detectors
-    "DetectronFaceDetector",
-    "EnhancedFaceDetector", 
-    "HighPerformanceDetector",
-    "YOLOFaceDetector",
-    "EyeDetector",
-    "GazeAnalyzer",
-    
-    # UI Components
-    "NeumorphismUI",
-    "EnhancedMinimalUI",
-    "MinimalUI",
-    
-    # Utilities
-    "AppConstants",
-    "UIConstants", 
-    "DetectionConstants",
-    
-    # Package info
     "__version__",
     "__author__",
     "__license__",
     "__description__",
+    "AppConstants",
+    "UIConstants",
+    "DetectionConstants",
 ]
